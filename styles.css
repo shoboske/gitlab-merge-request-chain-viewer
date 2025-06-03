@@ -1,0 +1,227 @@
+/* GitLab MR Chain Visualizer Styles */
+.mr-chain-visualizer {
+  margin: 16px 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  max-width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.mr-chain-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e5e5e5;
+  cursor: pointer;
+}
+
+.mr-chain-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2e2e2e;
+}
+
+.mr-chain-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 12px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mr-chain-toggle:hover {
+  color: #1f75cb;
+}
+
+.mr-chain-content {
+  padding: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.mr-chain-content.collapsed {
+  max-height: 0;
+  padding: 0 16px;
+  overflow: hidden;
+}
+
+.mr-chain-loading,
+.mr-chain-error,
+.mr-chain-empty {
+  padding: 8px 0;
+  color: #666;
+  font-size: 13px;
+  text-align: center;
+}
+
+.mr-chain-error {
+  color: #db3b21;
+}
+
+.mr-chain-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mr-chain-parents,
+.mr-chain-current,
+.mr-chain-children {
+  position: relative;
+}
+
+.mr-chain-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mr-chain-item {
+  padding: 4px 0;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.mr-chain-item:hover {
+  background-color: #f9f9f9;
+}
+
+.mr-chain-item-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px;
+  border-radius: 4px;
+  position: relative;
+}
+
+/* The vertical line connecting MRs */
+.mr-chain-connector {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 12px;
+  width: 2px;
+  background-color: #e5e5e5;
+  z-index: 0;
+}
+
+.mr-chain-parents .mr-chain-connector {
+  top: 50%;
+  bottom: -8px;
+}
+
+.mr-chain-children .mr-chain-connector {
+  top: -8px;
+  bottom: 50%;
+}
+
+/* The MR node */
+.mr-chain-item::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #1f75cb;
+  z-index: 1;
+}
+
+/* Status colors for the MR nodes */
+.mr-status-opened::before {
+  background-color: #1f75cb;
+}
+
+.mr-status-merged::before {
+  background-color: #1aaa55;
+}
+
+.mr-status-closed::before {
+  background-color: #db3b21;
+}
+
+.mr-chain-info {
+  margin-left: 24px;
+  flex: 1;
+}
+
+.mr-chain-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 350px;
+}
+
+.mr-chain-title a {
+  color: #333;
+  text-decoration: none;
+}
+
+.mr-chain-title a:hover {
+  text-decoration: underline;
+  color: #1f75cb;
+}
+
+.mr-chain-details {
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mr-chain-branch {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mr-chain-arrow {
+  color: #999;
+  font-size: 10px;
+}
+
+/* Current MR highlight */
+.mr-chain-item.current .mr-chain-item-content {
+  background-color: #fafbfe;
+  border: 1px solid #dbdcef;
+}
+
+.mr-chain-item.current::before {
+  width: 12px;
+  height: 12px;
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px #1f75cb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mr-chain-visualizer {
+    margin: 8px 0;
+  }
+  
+  .mr-chain-title {
+    max-width: 250px;
+  }
+  
+  .mr-chain-branch {
+    max-width: 80px;
+  }
+}

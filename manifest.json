@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "GitLab MR Chain Visualizer",
+  "version": "1.0.0",
+  "description": "Visualize merge request chains on GitLab",
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "action": {
+    "default_title": "GitLab MR Chain Visualizer"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.gitlab.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.gitlab.com/*/merge_requests/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}
