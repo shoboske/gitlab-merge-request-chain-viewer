@@ -16,11 +16,15 @@
     "activeTab"
   ],
   "host_permissions": [
-    "*://*.gitlab.com/*"
+    "*://*.gitlab.com/*",
+    "*://*/*/merge_requests/*"
   ],
   "content_scripts": [
     {
-      "matches": ["*://*.gitlab.com/*/merge_requests/*"],
+      "matches": [
+        "*://*.gitlab.com/*/merge_requests/*",
+        "*://*/*/merge_requests/*"
+      ],
       "js": ["content.js"],
       "css": ["styles.css"]
     }
