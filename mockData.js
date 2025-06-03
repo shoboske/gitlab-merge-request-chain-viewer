@@ -1,11 +1,11 @@
 // Mock data for development testing
-export const mockProjectInfo = {
+const mockProjectInfo = {
   id: 123,
   name: 'Test Project',
   default_branch: 'main'
 };
 
-export const mockMergeRequests = [
+const mockMergeRequests = [
   {
     id: 1,
     iid: 101,

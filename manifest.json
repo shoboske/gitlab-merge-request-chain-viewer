@@ -8,6 +8,20 @@
     "48": "assets/icon48.png",
     "128": "assets/icon128.png"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.gitlab.com/*/merge_requests/*",
+        "*://*/*/merge_requests/*"
+      ],
+      "js": [
+        "mermaid.min.js",
+        "mermaid-utils.js",
+        "content.js"
+      ],
+      "css": ["styles.css"]
+    }
+  ],
   "action": {
     "default_title": "GitLab MR Chain Visualizer"
   },
@@ -16,17 +30,9 @@
     "activeTab"
   ],
   "host_permissions": [
-    "*://*.gitlab.com/*",
-    "*://*/*/merge_requests/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "*://*.gitlab.com/*/merge_requests/*",
-        "*://*/*/merge_requests/*"
-      ],
-      "js": ["content.js"],
-      "css": ["styles.css"]
-    }
+    "https://*.gitlab.com/*",
+    "http://*.gitlab.com/*",
+    "https://*/*/merge_requests/*",
+    "http://*/*/merge_requests/*"
   ]
 }

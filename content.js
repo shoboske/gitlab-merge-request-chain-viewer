@@ -4,7 +4,7 @@
 // Configuration
 const config = {
   apiRequestDelay: 200, // ms between API requests to avoid rate limiting
-  animationDuration: 300, // ms for animations
+  animationDuration: 300, // ms for animations 
   maxChainDepth: 10, // Maximum depth to prevent infinite loops
   storageKey: 'gitlab_project_id_mapping' // Key for localStorage
 };
@@ -17,7 +17,7 @@ let mrChainData = {
 };
 
 // Development mode check
-const isDevelopment = window.location.hostname === 'expert-funicular-pw9475xq9g4c999r-5173.app.github.dev' || window.location.hostname === '127.0.0.1';
+const isDevelopment = window.location.hostname === 'expert-funicular-pw9475xq9g4c999r-5173.app.github.dev' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Get project ID from storage based on project path
 async function getProjectIdFromStorage(projectPath) {
@@ -139,10 +139,6 @@ function addChainButton() {
       const mergeRequests = await fetchMRChainData(projectInfo.gitlabUrl, projectInfo.projectId);
       mrChainData = mergeRequests;
       displayMRChain(mergeRequests);
-      // Initialize/reinitialize mermaid
-      if (window.mermaid) {
-        window.mermaid.init();
-      }
     } catch (err) {
       console.error('Error fetching MR chain data:', err);
       showError('Failed to load merge request chain data');
@@ -156,25 +152,8 @@ function addChainButton() {
 
 // Create the modal
 function createModal() {
-  // Add mermaid script if not already added
-  if (!document.querySelector('script[data-mermaid]')) {
-    const script = document.createElement('script');
-    script.setAttribute('data-mermaid', 'true');
-    script.type = 'module';
-    script.textContent = `
-      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-      window.mermaid = mermaid;
-      mermaid.initialize({ 
-        startOnLoad: true,
-        securityLevel: 'loose', // Required for clicking on nodes
-        flowchart: {
-          htmlLabels: true,
-          curve: 'basis'
-        }
-      });
-    `;
-    document.head.appendChild(script);
-  }
+  // Initialize mermaid when creating the modal
+  initializeMermaid();
 
   const modal = document.createElement('div');
   modal.id = 'mr-chain-modal';
@@ -211,8 +190,12 @@ function createModal() {
 // Fetch project info to get default branch
 async function fetchProjectInfo(gitlabUrl, projectId) {
   if (isDevelopment) {
-    const { mockProjectInfo } = await import('./mockData.js');
-    return mockProjectInfo;
+    try {
+      const { mockProjectInfo } = await import('./mockData.js');
+      return mockProjectInfo;
+    } catch (error) {
+      console.warn('Failed to load mock data:', error);
+    }
   }
 
   try {
@@ -260,48 +243,52 @@ async function fetchMRChainData(gitlabUrl, projectId) {
   }
 }
 
+// Display MR chain in modal
 function displayMRChain(mergeRequests) {
-  // Create container
-  const container = document.createElement('div');
-  container.className = 'mr-chain-container';
-
-  // Create pre element for mermaid
-  const mermaidDiv = document.createElement('pre');
-  mermaidDiv.className = 'mermaid';
-  
-  // Build mermaid diagram definition
-  let mermaidDefinition = 'graph LR\n';
-  
-  // Add nodes for each MR and click handlers
-  mergeRequests.forEach(mr => {
-    const nodeId = `MR${mr.iid}`;
-    const title = mr.title.replace(/"/g, "'"); // Replace quotes to avoid mermaid syntax issues
-    mermaidDefinition += `  ${nodeId}["!${mr.iid} - ${title}"]\n`;
-    // Add click handler to open MR in new tab
-    mermaidDefinition += `  click ${nodeId} href "${mr.web_url}" _blank\n`;
-  });
-  
-  // Add connections based on source/target branches
-  mergeRequests.forEach(mr => {
-    const sourceNode = `MR${mr.iid}`;
-    // Find MRs that use this MR's source branch as their target
-    const targetMRs = mergeRequests.filter(tmr => tmr.source_branch === mr.target_branch);
-    targetMRs.forEach(targetMR => {
-      mermaidDefinition += `  ${sourceNode} --> MR${targetMR.iid}\n`;
-    });
-  });
-
-  mermaidDiv.textContent = mermaidDefinition;
-  container.appendChild(mermaidDiv);
-  
-  const modal = document.querySelector('.mr-chain-modal-content');
-  modal.innerHTML = '';
-  modal.appendChild(container);
-
-  // Re-initialize mermaid
-  if (window.mermaid) {
-    window.mermaid.init();
+  const modal = document.getElementById('mr-chain-modal');
+  if (!modal) {
+    console.error('Modal element not found');
+    return;
   }
+  
+  const container = modal.querySelector('.mr-chain-modal-content');
+  if (!container) {
+    console.error('Modal content container not found');
+    return;
+  }
+  
+  // Clear previous content
+  container.innerHTML = '';
+  
+  // Add header back
+  container.innerHTML = `
+    <div class="mr-chain-modal-header">
+      <h3>Merge Request Chain</h3>
+      <button class="mr-chain-modal-close">&times;</button>
+    </div>
+    <div id="mr-chain-content" class="mr-chain-modal-body"></div>
+  `;
+
+  // Reattach the close button handler
+  const closeBtn = container.querySelector('.mr-chain-modal-close');
+  closeBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  const contentContainer = container.querySelector('#mr-chain-content');
+  
+  if (!mergeRequests || mergeRequests.length === 0) {
+    contentContainer.innerHTML = '<p>No merge requests found in the chain.</p>';
+    return;
+  }
+
+  // Create a container for the Mermaid diagram
+  const diagramContainer = document.createElement('div');
+  diagramContainer.id = 'mrChainDiagram';
+  contentContainer.appendChild(diagramContainer);
+
+  // Render the chain diagram
+  renderMRChain(diagramContainer, mergeRequests);
 }
 
 // Fetch data for a specific merge request
