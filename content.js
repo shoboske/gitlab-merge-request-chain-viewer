@@ -6,6 +6,7 @@ const config = {
   apiRequestDelay: 200, // ms between API requests to avoid rate limiting
   animationDuration: 300, // ms for animations
   maxChainDepth: 10, // Maximum depth to prevent infinite loops
+  storageKey: 'gitlab_project_id_mapping' // Key for localStorage
 };
 
 // State
@@ -14,6 +15,28 @@ let mrChainData = {
   parents: [],
   children: []
 };
+
+// Get project ID from storage based on project path
+async function getProjectIdFromStorage(projectPath) {
+  try {
+    const mapping = JSON.parse(localStorage.getItem(config.storageKey) || '{}');
+    return mapping[projectPath];
+  } catch (error) {
+    console.error('Error reading from storage:', error);
+    return null;
+  }
+}
+
+// Save project ID mapping to storage
+async function saveProjectIdToStorage(projectPath, projectId) {
+  try {
+    const mapping = JSON.parse(localStorage.getItem(config.storageKey) || '{}');
+    mapping[projectPath] = projectId;
+    localStorage.setItem(config.storageKey, JSON.stringify(mapping));
+  } catch (error) {
+    console.error('Error saving to storage:', error);
+  }
+}
 
 // Main initialization function
 function init() {
@@ -39,6 +62,28 @@ function addChainButton() {
   const buttonContainer = document.createElement('li');
   buttonContainer.className = 'nav-item';
   buttonContainer.style.marginLeft = '8px';
+  buttonContainer.style.display = 'flex';
+  buttonContainer.style.alignItems = 'center';
+  buttonContainer.style.gap = '8px';
+
+  // Add project ID input
+  const projectIdInput = document.createElement('input');
+  projectIdInput.type = 'number';
+  projectIdInput.className = 'form-control gl-form-input';
+  projectIdInput.placeholder = 'Project ID';
+  projectIdInput.style.width = '100px';
+  projectIdInput.title = 'Enter your GitLab project ID';
+
+  // Try to load saved project ID
+  const pathParts = window.location.pathname.split('/');
+  const mrIndex = pathParts.indexOf('merge_requests');
+  if (mrIndex !== -1) {
+    const projectPath = pathParts.slice(1, mrIndex).join('/');
+    getProjectIdFromStorage(projectPath).then(savedId => {
+      if (savedId) {
+        projectIdInput.value = savedId;
+      }
+    });
 
   const button = document.createElement('button');
   button.className = 'gl-button btn btn-default btn-md';
@@ -54,12 +99,40 @@ function addChainButton() {
 
     modal.style.display = 'block';
     
-    // Get the current project and MR information
-    const projectInfo = extractProjectInfo();
-    if (!projectInfo) {
-      showError('Could not extract project information');
+    // Get the current MR path and ID
+    const pathParts = window.location.pathname.split('/');
+    const mrIndex = pathParts.indexOf('merge_requests');
+    if (mrIndex === -1 || mrIndex + 1 >= pathParts.length) {
+      showError('Could not determine merge request ID');
       return;
     }
+
+    const mrId = pathParts[mrIndex + 1];
+    const projectPath = pathParts.slice(1, mrIndex).join('/');
+
+    // Get project ID from input or storage
+    let projectId = projectIdInput.value;
+    
+    if (!projectId) {
+      // Try to get from storage
+      projectId = await getProjectIdFromStorage(projectPath);
+      if (!projectId) {
+        showError('Please enter a project ID');
+        return;
+      }
+      // Update input field with stored value
+      projectIdInput.value = projectId;
+    } else {
+      // Save new project ID mapping
+      await saveProjectIdToStorage(projectPath, projectId);
+    }
+
+    const projectInfo = {
+      projectId,
+      projectPath,
+      mrId,
+      gitlabUrl: window.location.origin
+    };
     
     // Show loading state
     const modalContent = document.querySelector('.mr-chain-modal-content');
@@ -78,6 +151,7 @@ function addChainButton() {
     }
   });
 
+  buttonContainer.appendChild(projectIdInput);
   buttonContainer.appendChild(button);
   tabList.appendChild(buttonContainer);
 }
@@ -116,36 +190,12 @@ function createModal() {
   });
 }
 
-// Extract project information from the current page URL
-function extractProjectInfo() {
-  try {
-    const pathParts = window.location.pathname.split('/');
-    const mrIndex = pathParts.indexOf('merge_requests');
-    
-    if (mrIndex === -1 || mrIndex + 1 >= pathParts.length) {
-      return null;
-    }
-    
-    const mrId = pathParts[mrIndex + 1];
-    const projectPath = pathParts.slice(1, mrIndex).join('/');
-    
-    return {
-      projectPath,
-      mrId,
-      gitlabUrl: window.location.origin
-    };
-  } catch (error) {
-    console.error('Error extracting project info:', error);
-    return null;
-  }
-}
-
 // Fetch all data needed to build the MR chain
 async function fetchMRChainData(projectInfo) {
   // Start with the current MR
   const currentMR = await fetchMergeRequestData(
     projectInfo.gitlabUrl,
-    projectInfo.projectPath,
+    projectInfo.projectId,
     projectInfo.mrId
   );
   
@@ -181,7 +231,7 @@ async function findParentMRs(projectInfo, mr, chainData, depth) {
     // Look for MRs where the target branch matches this MR's source branch
     const parentMRs = await fetchMergeRequestsByTargetBranch(
       projectInfo.gitlabUrl,
-      projectInfo.projectPath,
+      projectInfo.projectId,
       sourceBranch
     );
     
@@ -211,7 +261,7 @@ async function findChildMRs(projectInfo, mr, chainData, depth) {
     // Look for MRs where the source branch is based on this MR's target branch
     const childMRs = await fetchMergeRequestsBySourceBranch(
       projectInfo.gitlabUrl, 
-      projectInfo.projectPath,
+      projectInfo.projectId,
       targetBranch
     );
     
@@ -229,10 +279,10 @@ async function findChildMRs(projectInfo, mr, chainData, depth) {
 }
 
 // Fetch data for a specific merge request
-async function fetchMergeRequestData(gitlabUrl, projectPath, mrId) {
+async function fetchMergeRequestData(gitlabUrl, projectId, mrId) {
   try {
     // Use GitLab's API to get MR data
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${encodeURIComponent(projectPath)}/merge_requests/${mrId}`;
+    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrId}`;
     
     // For this prototype, we'll use the fetch API directly
     // In a real extension, you might need to handle authentication
@@ -250,9 +300,9 @@ async function fetchMergeRequestData(gitlabUrl, projectPath, mrId) {
 }
 
 // Fetch merge requests by target branch
-async function fetchMergeRequestsByTargetBranch(gitlabUrl, projectPath, targetBranch) {
+async function fetchMergeRequestsByTargetBranch(gitlabUrl, projectId, targetBranch) {
   try {
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${encodeURIComponent(projectPath)}/merge_requests?target_branch=${encodeURIComponent(targetBranch)}&state=opened`;
+    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests?target_branch=${encodeURIComponent(targetBranch)}&state=opened`;
     
     const response = await fetch(apiUrl);
     
@@ -268,9 +318,9 @@ async function fetchMergeRequestsByTargetBranch(gitlabUrl, projectPath, targetBr
 }
 
 // Fetch merge requests by source branch
-async function fetchMergeRequestsBySourceBranch(gitlabUrl, projectPath, sourceBranch) {
+async function fetchMergeRequestsBySourceBranch(gitlabUrl, projectId, sourceBranch) {
   try {
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${encodeURIComponent(projectPath)}/merge_requests?source_branch=${encodeURIComponent(sourceBranch)}&state=opened`;
+    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests?source_branch=${encodeURIComponent(sourceBranch)}&state=opened`;
     
     const response = await fetch(apiUrl);
     
@@ -422,4 +472,4 @@ new MutationObserver(() => {
     lastUrl = url;
     init();
   }
-}).observe(document, { subtree: true, childList: true });
+}).observe(document, { subtree: true, childList: true })};
