@@ -24,26 +24,96 @@ function init() {
 
   console.log('GitLab MR Chain Visualizer initializing...');
   
-  // Add our UI container to the page
-  createUI();
+  // Add button to the tab filters
+  addChainButton();
   
-  // Get the current project and MR information
-  const projectInfo = extractProjectInfo();
-  if (!projectInfo) {
-    console.error('Could not extract project information');
-    return;
-  }
+  // Add modal to the page
+  createModal();
+}
+
+// Add the chain button next to tab filters
+function addChainButton() {
+  const tabList = document.querySelector('.issues-state-filters');
+  if (!tabList) return;
+
+  const buttonContainer = document.createElement('li');
+  buttonContainer.className = 'nav-item';
+  buttonContainer.style.marginLeft = '8px';
+
+  const button = document.createElement('button');
+  button.className = 'gl-button btn btn-default btn-md';
+  button.innerHTML = `
+    <span class="gl-button-text">
+      View Chain
+    </span>
+  `;
   
-  // Get chain data and build visualization
-  fetchMRChainData(projectInfo)
-    .then(chainData => {
+  button.addEventListener('click', async () => {
+    const modal = document.getElementById('mr-chain-modal');
+    if (!modal) return;
+
+    modal.style.display = 'block';
+    
+    // Get the current project and MR information
+    const projectInfo = extractProjectInfo();
+    if (!projectInfo) {
+      showError('Could not extract project information');
+      return;
+    }
+    
+    // Show loading state
+    const modalContent = document.querySelector('.mr-chain-modal-content');
+    if (modalContent) {
+      modalContent.innerHTML = '<div class="mr-chain-loading">Loading chain data...</div>';
+    }
+    
+    // Get chain data and build visualization
+    try {
+      const chainData = await fetchMRChainData(projectInfo);
       mrChainData = chainData;
       renderChainVisualization(chainData);
-    })
-    .catch(err => {
+    } catch (err) {
       console.error('Error fetching MR chain data:', err);
       showError('Failed to load merge request chain data');
-    });
+    }
+  });
+
+  buttonContainer.appendChild(button);
+  tabList.appendChild(buttonContainer);
+}
+
+// Create the modal
+function createModal() {
+  const modal = document.createElement('div');
+  modal.id = 'mr-chain-modal';
+  modal.className = 'mr-chain-modal';
+  
+  modal.innerHTML = `
+    <div class="mr-chain-modal-content">
+      <div class="mr-chain-modal-header">
+        <h3>Merge Request Chain</h3>
+        <button class="mr-chain-modal-close">&times;</button>
+      </div>
+      <div id="mr-chain-content" class="mr-chain-modal-body">
+        <div class="mr-chain-loading">Click "View Chain" to load data</div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Close button handler
+  const closeBtn = modal.querySelector('.mr-chain-modal-close');
+  closeBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+  
+  // Click outside to close
+  window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
 }
 
 // Extract project information from the current page URL
@@ -67,68 +137,6 @@ function extractProjectInfo() {
   } catch (error) {
     console.error('Error extracting project info:', error);
     return null;
-  }
-}
-
-// Create UI elements
-function createUI() {
-  const sidebarContainer = document.querySelector('.js-right-sidebar');
-  if (!sidebarContainer) {
-    // Try alternative container if the sidebar doesn't exist
-    const alternativeContainer = document.querySelector('.detail-page-header');
-    if (alternativeContainer) {
-      injectVisualizerContainer(alternativeContainer, 'after');
-    }
-    return;
-  }
-  
-  injectVisualizerContainer(sidebarContainer, 'before');
-}
-
-// Create and inject the container for our visualizer
-function injectVisualizerContainer(targetElement, position) {
-  const container = document.createElement('div');
-  container.id = 'mr-chain-visualizer';
-  container.className = 'mr-chain-visualizer';
-  
-  const header = document.createElement('div');
-  header.className = 'mr-chain-header';
-  header.innerHTML = `
-    <h3>Merge Request Chain</h3>
-    <button id="mr-chain-toggle" class="mr-chain-toggle">
-      <span class="mr-chain-icon">▼</span>
-    </button>
-  `;
-  
-  const content = document.createElement('div');
-  content.id = 'mr-chain-content';
-  content.className = 'mr-chain-content';
-  content.innerHTML = '<div class="mr-chain-loading">Loading chain data...</div>';
-  
-  container.appendChild(header);
-  container.appendChild(content);
-  
-  if (position === 'before') {
-    targetElement.parentNode.insertBefore(container, targetElement);
-  } else if (position === 'after') {
-    targetElement.parentNode.insertBefore(container, targetElement.nextSibling);
-  }
-  
-  // Add event listener for toggle button
-  document.getElementById('mr-chain-toggle').addEventListener('click', toggleChainVisibility);
-}
-
-// Toggle the visibility of the chain visualization
-function toggleChainVisibility() {
-  const content = document.getElementById('mr-chain-content');
-  const icon = document.querySelector('.mr-chain-icon');
-  
-  if (content.classList.contains('collapsed')) {
-    content.classList.remove('collapsed');
-    icon.textContent = '▼';
-  } else {
-    content.classList.add('collapsed');
-    icon.textContent = '▶';
   }
 }
 
