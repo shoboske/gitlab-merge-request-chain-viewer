@@ -16,6 +16,9 @@ let mrChainData = {
   children: []
 };
 
+// Development mode check
+const isDevelopment = window.location.hostname === 'expert-funicular-pw9475xq9g4c999r-5173.app.github.dev' || window.location.hostname === '127.0.0.1';
+
 // Get project ID from storage based on project path
 async function getProjectIdFromStorage(projectPath) {
   try {
@@ -40,18 +43,16 @@ async function saveProjectIdToStorage(projectPath, projectId) {
 
 // Main initialization function
 function init() {
-  // Only run on merge request pages
-  if (!window.location.pathname.includes('/merge_requests/')) {
-    return;
+  // In development mode, always initialize
+  if (isDevelopment || window.location.pathname.includes('merge_requests')) {
+    console.log('GitLab MR Chain Visualizer initializing...');
+  
+    // Add button to the tab filters
+    addChainButton();
+    
+    // Add modal to the page
+    createModal();
   }
-
-  console.log('GitLab MR Chain Visualizer initializing...');
-  
-  // Add button to the tab filters
-  addChainButton();
-  
-  // Add modal to the page
-  createModal();
 }
 
 // Add the chain button next to tab filters
@@ -84,6 +85,7 @@ function addChainButton() {
         projectIdInput.value = savedId;
       }
     });
+  }
 
   const button = document.createElement('button');
   button.className = 'gl-button btn btn-default btn-md';
@@ -99,16 +101,9 @@ function addChainButton() {
 
     modal.style.display = 'block';
     
-    // Get the current MR path and ID
-    const pathParts = window.location.pathname.split('/');
-    const mrIndex = pathParts.indexOf('merge_requests');
-    if (mrIndex === -1 || mrIndex + 1 >= pathParts.length) {
-      showError('Could not determine merge request ID');
-      return;
-    }
-
-    const mrId = pathParts[mrIndex + 1];
-    const projectPath = pathParts.slice(1, mrIndex).join('/');
+    // Use default project path in development mode, or extract from current URL in production
+    const projectPath = isDevelopment ? 'test-project' : 
+      window.location.pathname.split('/').slice(1, -1).join('/');
 
     // Get project ID from input or storage
     let projectId = projectIdInput.value;
@@ -130,8 +125,7 @@ function addChainButton() {
     const projectInfo = {
       projectId,
       projectPath,
-      mrId,
-      gitlabUrl: window.location.origin
+      gitlabUrl: isDevelopment ? 'http://localhost:5173' : window.location.origin
     };
     
     // Show loading state
@@ -142,9 +136,13 @@ function addChainButton() {
     
     // Get chain data and build visualization
     try {
-      const chainData = await fetchMRChainData(projectInfo);
-      mrChainData = chainData;
-      renderChainVisualization(chainData);
+      const mergeRequests = await fetchMRChainData(projectInfo.gitlabUrl, projectInfo.projectId);
+      mrChainData = mergeRequests;
+      displayMRChain(mergeRequests);
+      // Initialize/reinitialize mermaid
+      if (window.mermaid) {
+        window.mermaid.init();
+      }
     } catch (err) {
       console.error('Error fetching MR chain data:', err);
       showError('Failed to load merge request chain data');
@@ -158,6 +156,26 @@ function addChainButton() {
 
 // Create the modal
 function createModal() {
+  // Add mermaid script if not already added
+  if (!document.querySelector('script[data-mermaid]')) {
+    const script = document.createElement('script');
+    script.setAttribute('data-mermaid', 'true');
+    script.type = 'module';
+    script.textContent = `
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+      window.mermaid = mermaid;
+      mermaid.initialize({ 
+        startOnLoad: true,
+        securityLevel: 'loose', // Required for clicking on nodes
+        flowchart: {
+          htmlLabels: true,
+          curve: 'basis'
+        }
+      });
+    `;
+    document.head.appendChild(script);
+  }
+
   const modal = document.createElement('div');
   modal.id = 'mr-chain-modal';
   modal.className = 'mr-chain-modal';
@@ -190,91 +208,99 @@ function createModal() {
   });
 }
 
+// Fetch project info to get default branch
+async function fetchProjectInfo(gitlabUrl, projectId) {
+  if (isDevelopment) {
+    const { mockProjectInfo } = await import('./mockData.js');
+    return mockProjectInfo;
+  }
+
+  try {
+    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}`;
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching project info:', error);
+    throw error;
+  }
+}
+
 // Fetch all data needed to build the MR chain
-async function fetchMRChainData(projectInfo) {
-  // Start with the current MR
-  const currentMR = await fetchMergeRequestData(
-    projectInfo.gitlabUrl,
-    projectInfo.projectId,
-    projectInfo.mrId
-  );
-  
-  if (!currentMR) {
-    throw new Error('Could not fetch current merge request data');
-  }
-  
-  const chainData = {
-    current: currentMR,
-    parents: [],
-    children: []
-  };
-  
-  // Find parent MRs (what the current MR is based on)
-  await findParentMRs(projectInfo, currentMR, chainData, 0);
-  
-  // Find child MRs (MRs based on the current MR)
-  await findChildMRs(projectInfo, currentMR, chainData, 0);
-  
-  return chainData;
-}
-
-// Find MRs that the current MR is based on
-async function findParentMRs(projectInfo, mr, chainData, depth) {
-  if (depth >= config.maxChainDepth) {
-    return; // Prevent infinite recursion
-  }
-  
-  // Extract the target branch from the current MR
-  const sourceBranch = mr.source_branch;
-  
+async function fetchMRChainData(gitlabUrl, projectId) {
   try {
-    // Look for MRs where the target branch matches this MR's source branch
-    const parentMRs = await fetchMergeRequestsByTargetBranch(
-      projectInfo.gitlabUrl,
-      projectInfo.projectId,
-      sourceBranch
-    );
-    
-    for (const parentMR of parentMRs) {
-      // Add to the chain data
-      chainData.parents.push(parentMR);
+    // First get project info to get default branch
+    const projectInfo = await fetchProjectInfo(gitlabUrl, projectId);
+    const defaultBranch = projectInfo.default_branch;
+
+    let mergeRequests;
+    if (isDevelopment) {
+      const { mockMergeRequests } = await import('./mockData.js');
+      mergeRequests = mockMergeRequests;
+    } else {
+      // Then fetch merge requests
+      const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests?state=opened`;
+      const response = await fetch(apiUrl);
       
-      // Recursively find parents of this parent
-      await new Promise(resolve => setTimeout(resolve, config.apiRequestDelay));
-      await findParentMRs(projectInfo, parentMR, chainData, depth + 1);
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+      
+      mergeRequests = await response.json();
     }
+
+    return mergeRequests;
   } catch (error) {
-    console.error('Error finding parent MRs:', error);
+    console.error('Error fetching MR chain data:', error);
+    throw error;
   }
 }
 
-// Find MRs that are based on the current MR
-async function findChildMRs(projectInfo, mr, chainData, depth) {
-  if (depth >= config.maxChainDepth) {
-    return; // Prevent infinite recursion
-  }
+function displayMRChain(mergeRequests) {
+  // Create container
+  const container = document.createElement('div');
+  container.className = 'mr-chain-container';
+
+  // Create pre element for mermaid
+  const mermaidDiv = document.createElement('pre');
+  mermaidDiv.className = 'mermaid';
   
-  // Extract the target branch from the current MR
-  const targetBranch = mr.target_branch;
+  // Build mermaid diagram definition
+  let mermaidDefinition = 'graph LR\n';
   
-  try {
-    // Look for MRs where the source branch is based on this MR's target branch
-    const childMRs = await fetchMergeRequestsBySourceBranch(
-      projectInfo.gitlabUrl, 
-      projectInfo.projectId,
-      targetBranch
-    );
-    
-    for (const childMR of childMRs) {
-      // Add to the chain data
-      chainData.children.push(childMR);
-      
-      // Recursively find children of this child
-      await new Promise(resolve => setTimeout(resolve, config.apiRequestDelay));
-      await findChildMRs(projectInfo, childMR, chainData, depth + 1);
-    }
-  } catch (error) {
-    console.error('Error finding child MRs:', error);
+  // Add nodes for each MR and click handlers
+  mergeRequests.forEach(mr => {
+    const nodeId = `MR${mr.iid}`;
+    const title = mr.title.replace(/"/g, "'"); // Replace quotes to avoid mermaid syntax issues
+    mermaidDefinition += `  ${nodeId}["!${mr.iid} - ${title}"]\n`;
+    // Add click handler to open MR in new tab
+    mermaidDefinition += `  click ${nodeId} href "${mr.web_url}" _blank\n`;
+  });
+  
+  // Add connections based on source/target branches
+  mergeRequests.forEach(mr => {
+    const sourceNode = `MR${mr.iid}`;
+    // Find MRs that use this MR's source branch as their target
+    const targetMRs = mergeRequests.filter(tmr => tmr.source_branch === mr.target_branch);
+    targetMRs.forEach(targetMR => {
+      mermaidDefinition += `  ${sourceNode} --> MR${targetMR.iid}\n`;
+    });
+  });
+
+  mermaidDiv.textContent = mermaidDefinition;
+  container.appendChild(mermaidDiv);
+  
+  const modal = document.querySelector('.mr-chain-modal-content');
+  modal.innerHTML = '';
+  modal.appendChild(container);
+
+  // Re-initialize mermaid
+  if (window.mermaid) {
+    window.mermaid.init();
   }
 }
 
@@ -457,6 +483,150 @@ function showError(message) {
   }
 }
 
+// Build MR chain using default branch as base
+function buildMergeRequestChain(mergeRequests, defaultBranch) {
+  const mrsByTargetBranch = {};
+  const mrsBySrcBranch = {};
+  const chain = [];
+
+  // Index MRs by target and source branches
+  mergeRequests.forEach(mr => {
+    if (!mrsByTargetBranch[mr.target_branch]) {
+      mrsByTargetBranch[mr.target_branch] = [];
+    }
+    mrsByTargetBranch[mr.target_branch].push(mr);
+
+    mrsBySrcBranch[mr.source_branch] = mr;
+  });
+
+  // Start with MRs targeting default branch
+  const rootMRs = mrsByTargetBranch[defaultBranch] || [];
+  
+  // Process each root MR
+  rootMRs.forEach(rootMR => {
+    const subChain = [rootMR];
+    let currentMR = rootMR;
+
+    // Find MRs that target the source branch of current MR
+    while (mrsByTargetBranch[currentMR.source_branch]?.length > 0) {
+      const nextMRs = mrsByTargetBranch[currentMR.source_branch];
+      // Add the first MR in the chain
+      currentMR = nextMRs[0];
+      subChain.push(currentMR);
+    }
+    
+    chain.push(subChain);
+  });
+
+  return chain;
+}
+
+// Add styles to the page
+const styles = `
+  .mr-chain-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+  }
+
+  .mr-chain-modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 1200px;
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .mr-chain-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .mr-chain-modal-close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+
+  .mr-chain-modal-close:hover {
+    color: #000;
+  }
+
+  .mr-chain-loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+    color: #666;
+  }
+
+  .mr-chain-error {
+    text-align: center;
+    padding: 20px;
+    color: #cc0000;
+    font-size: 16px;
+  }
+
+  .mr-chain-container {
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  }
+
+  .mermaid {
+    text-align: center;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .mr-item {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .mr-item a {
+    color: #0366d6;
+    text-decoration: none;
+  }
+  
+  .mr-item a:hover {
+    text-decoration: underline;
+  }
+  
+  .mr-arrow {
+    margin: 0 10px;
+    color: #586069;
+    font-size: 20px;
+  }
+  
+  .chain-separator {
+    border-top: 1px solid #e1e4e8;
+    margin: 15px 0;
+  }
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = styles;
+document.head.appendChild(styleSheet);
+
 // Wait for the page to be fully loaded
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
@@ -472,4 +642,4 @@ new MutationObserver(() => {
     lastUrl = url;
     init();
   }
-}).observe(document, { subtree: true, childList: true })};
+}).observe(document, { subtree: true, childList: true });
