@@ -12,7 +12,7 @@
     {
       "matches": [
         "*://*.gitlab.com/*/merge_requests/*",
-        "*://*/*/merge_requests/*"
+        "*://*/*/merge_requests"
       ],
       "js": [
         "mermaid.min.js",
@@ -32,7 +32,7 @@
   "host_permissions": [
     "https://*.gitlab.com/*",
     "http://*.gitlab.com/*",
-    "https://*/*/merge_requests/*",
-    "http://*/*/merge_requests/*"
+    "https://*/*/merge_requests",
+    "http://*/*/merge_requests"
   ]
 }

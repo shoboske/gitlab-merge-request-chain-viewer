@@ -163,7 +163,15 @@ function createModal() {
     <div class="mr-chain-modal-content">
       <div class="mr-chain-modal-header">
         <h3>Merge Request Chain</h3>
-        <button class="mr-chain-modal-close">&times;</button>
+        <div class="mr-chain-actions">
+          <button class="gl-button btn btn-default btn-md mr-chain-export-svg">
+            <span class="gl-button-text">Export SVG</span>
+          </button>
+          <button class="gl-button btn btn-default btn-md mr-chain-copy-png">
+            <span class="gl-button-text">Copy PNG</span>
+          </button>
+          <button class="mr-chain-modal-close">&times;</button>
+        </div>
       </div>
       <div id="mr-chain-content" class="mr-chain-modal-body">
         <div class="mr-chain-loading">Click "View Chain" to load data</div>
@@ -264,7 +272,15 @@ function displayMRChain(mergeRequests) {
   container.innerHTML = `
     <div class="mr-chain-modal-header">
       <h3>Merge Request Chain</h3>
-      <button class="mr-chain-modal-close">&times;</button>
+      <div class="mr-chain-actions">
+        <button class="gl-button btn btn-default btn-md mr-chain-export-svg">
+          <span class="gl-button-text">Export SVG</span>
+        </button>
+        <button class="gl-button btn btn-default btn-md mr-chain-copy-png">
+          <span class="gl-button-text">Copy PNG</span>
+        </button>
+        <button class="mr-chain-modal-close">&times;</button>
+      </div>
     </div>
     <div id="mr-chain-content" class="mr-chain-modal-body"></div>
   `;
@@ -540,6 +556,18 @@ const styles = `
     margin-bottom: 20px;
   }
 
+  .mr-chain-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .mr-chain-export-svg,
+  .mr-chain-copy-png {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+
   .mr-chain-modal-close {
     color: #aaa;
     font-size: 28px;
@@ -565,6 +593,27 @@ const styles = `
     padding: 20px;
     color: #cc0000;
     font-size: 16px;
+  }
+
+  .mr-chain-message {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2da44e;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1001;
+    animation: fadeInOut 2s ease;
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, 20px); }
+    15% { opacity: 1; transform: translate(-50%, 0); }
+    85% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -20px); }
   }
 
   .mr-chain-container {
@@ -607,6 +656,15 @@ const styles = `
   .chain-separator {
     border-top: 1px solid #e1e4e8;
     margin: 15px 0;
+  }
+
+  .mermaid .node {
+    cursor: context-menu;
+    transition: opacity 0.3s ease;
+  }
+
+  .mermaid .edge {
+    transition: opacity 0.3s ease;
   }
 `;
 

@@ -9,12 +9,13 @@
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  overflow-y: auto;
+  background-color: var(--black-transparent-200, rgba(0, 0, 0, 0.5));
+  overflow-y: hidden;
 }
 
 .mr-chain-modal-content {
-  background-color: #fff;
+  background-color: var(--gray-10, var(--white));
+  color: var(--gray-950, var(--black));
   margin: 40px auto;
   padding: 0;
   width: 90%;
@@ -35,21 +36,21 @@
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #2e2e2e;
+  color: var(--gl-text-color-default);
 }
 
 .mr-chain-modal-close {
   background: none;
   border: none;
   font-size: 24px;
-  color: #666;
+  color: var(--gl-text-color-secondary);
   cursor: pointer;
   padding: 0;
   line-height: 1;
 }
 
 .mr-chain-modal-close:hover {
-  color: #1f75cb;
+  color: var(--gl-link-color);
 }
 
 .mr-chain-modal-body {
@@ -69,13 +70,13 @@
 .mr-chain-error,
 .mr-chain-empty {
   padding: 16px;
-  color: #666;
+  color: var(--gl-text-color-secondary);
   font-size: 14px;
   text-align: center;
 }
 
 .mr-chain-error {
-  color: #db3b21;
+  color: var(--gl-text-red-500);
 }
 
 .mr-chain-list {
@@ -99,9 +100,9 @@
   display: flex;
   align-items: flex-start;
   padding: 12px;
-  border-radius: 4px;
+  border-radius: var(--gl-border-radius-base);
   position: relative;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--gl-border-color);
   margin: 4px 0;
 }
 
@@ -142,15 +143,15 @@
 
 /* Status colors for the MR nodes */
 .mr-status-opened::before {
-  background-color: #1f75cb;
+  background-color: var(--blue-500);
 }
 
 .mr-status-merged::before {
-  background-color: #1aaa55;
+  background-color: var(--green-500);
 }
 
 .mr-status-closed::before {
-  background-color: #db3b21;
+  background-color: var(--red-500);
 }
 
 .mr-chain-info {
@@ -165,18 +166,18 @@
 }
 
 .mr-chain-title a {
-  color: #2e2e2e;
+  color: var(--gray-950, var(--black));
   text-decoration: none;
 }
 
 .mr-chain-title a:hover {
-  color: #1f75cb;
+  color: var(--blue-600);
   text-decoration: underline;
 }
 
 .mr-chain-details {
   font-size: 12px;
-  color: #666;
+  color: var(--gray-500);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -187,8 +188,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: monospace;
-  background-color: #f5f5f5;
+  font-family: var(--mono-font, 'JetBrains Mono', monospace);
+  background-color: var(--gray-50);
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -200,15 +201,15 @@
 
 /* Current MR highlight */
 .mr-chain-item.current .mr-chain-item-content {
-  background-color: #fafbfe;
-  border: 1px solid #1f75cb;
+  background-color: var(--blue-50);
+  border: 1px solid var(--blue-500);
 }
 
 .mr-chain-item.current::before {
   width: 12px;
   height: 12px;
-  border: 2px solid white;
-  box-shadow: 0 0 0 2px #1f75cb;
+  border: 2px solid var(--white);
+  box-shadow: 0 0 0 2px var(--blue-500);
 }
 
 /* Responsive adjustments */
