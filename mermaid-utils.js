@@ -33,6 +33,13 @@ function cleanSvgForExport(svgElement) {
     }
   });
 
+  // Add solid white background
+  const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  background.setAttribute('width', '100%');
+  background.setAttribute('height', '100%');
+  background.setAttribute('fill', 'white');
+  svgClone.insertBefore(background, svgClone.firstChild);
+
   // Inline all styles
   const styles = document.querySelector('style');
   if (styles) {
