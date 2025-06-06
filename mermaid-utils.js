@@ -221,6 +221,10 @@ async function renderMRChain(container, mergeRequests) {
 // Generate Mermaid diagram definition
 function generateMermaidDefinition(mergeRequests) {
   let definition = 'graph LR\n';
+  const includeMainBranch = document.getElementById('include-main-branch')?.checked ?? true;
+  
+  // Track added main branches to avoid duplicates
+  const addedMainBranches = new Set();
   
   // Add nodes with clickable titles
   mergeRequests.forEach(mr => {
@@ -229,9 +233,25 @@ function generateMermaidDefinition(mergeRequests) {
     const title = mr.title.replace(/"/g, '&quot;');
     definition += `  ${nodeId}["#${mr.iid} - ${title}"]\n`;
     definition += `  click ${nodeId} "${mr.web_url}" _blank\n`;
+    
+    // Add main branch node if needed
+    if (includeMainBranch) {
+      const branch = mr.target_branch.toLowerCase();
+      const isMainBranch = ['master', 'main', 'develop'].includes(branch);
+      const isTerminalBranch = !mergeRequests.some(tmr => tmr.source_branch === mr.target_branch);
+      
+      if (isMainBranch || isTerminalBranch) {
+        const branchId = `main_${mr.target_branch}`;
+        if (!addedMainBranches.has(mr.target_branch)) {
+          definition += `  ${branchId}["${mr.target_branch}"]\n`;
+          addedMainBranches.add(mr.target_branch);
+        }
+        definition += `  MR${mr.iid} --> ${branchId}\n`;
+      }
+    }
   });
   
-  // Add connections
+  // Add connections between MRs
   mergeRequests.forEach(mr => {
     const targetMRs = mergeRequests.filter(tmr => tmr.source_branch === mr.target_branch);
     targetMRs.forEach(targetMR => {
@@ -240,4 +260,14 @@ function generateMermaidDefinition(mergeRequests) {
   });
 
   return definition;
+}
+
+// Add checkbox change handler to update diagram
+function addCheckboxHandler(container, mergeRequests) {
+  const checkbox = document.getElementById('include-main-branch');
+  if (checkbox) {
+    checkbox.addEventListener('change', () => {
+      renderMRChain(container, mergeRequests);
+    });
+  }
 }

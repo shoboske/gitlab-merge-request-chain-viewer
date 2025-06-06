@@ -6,8 +6,30 @@ const config = {
   apiRequestDelay: 200, // ms between API requests to avoid rate limiting
   animationDuration: 300, // ms for animations 
   maxChainDepth: 10, // Maximum depth to prevent infinite loops
-  storageKey: 'gitlab_project_id_mapping' // Key for localStorage
 };
+
+// Extract project path from current URL
+function getProjectInfo() {
+  const url = window.location.href;
+  const domain = window.location.origin;
+  
+  // Remove the domain from the URL
+  const path = url.replace(domain, '');
+  
+  // Split the path and remove empty strings
+  const parts = path.split('/').filter(Boolean);
+  
+  // Find the index of '-' or 'merge_requests'
+  const separatorIndex = parts.findIndex(part => part === '-' || part === 'merge_requests');
+  
+  // Take all parts before the separator to get the project path
+  const projectPath = parts.slice(0, separatorIndex).join('/');
+  
+  return {
+    gitlabUrl: domain,
+    projectPath: encodeURIComponent(projectPath)
+  };
+}
 
 // State
 let mrChainData = {
@@ -101,32 +123,9 @@ function addChainButton() {
 
     modal.style.display = 'block';
     
-    // Use default project path in development mode, or extract from current URL in production
-    const projectPath = isDevelopment ? 'test-project' : 
-      window.location.pathname.split('/').slice(1, -1).join('/');
-
-    // Get project ID from input or storage
-    let projectId = projectIdInput.value;
-    
-    if (!projectId) {
-      // Try to get from storage
-      projectId = await getProjectIdFromStorage(projectPath);
-      if (!projectId) {
-        showError('Please enter a project ID');
-        return;
-      }
-      // Update input field with stored value
-      projectIdInput.value = projectId;
-    } else {
-      // Save new project ID mapping
-      await saveProjectIdToStorage(projectPath, projectId);
-    }
-
-    const projectInfo = {
-      projectId,
-      projectPath,
-      gitlabUrl: isDevelopment ? 'http://localhost:5173' : window.location.origin
-    };
+    const projectInfo = isDevelopment 
+      ? { gitlabUrl: 'http://localhost:5173', projectPath: 'test-project' }
+      : getProjectInfo();
     
     // Show loading state
     const modalContent = document.querySelector('.mr-chain-modal-content');
@@ -136,7 +135,7 @@ function addChainButton() {
     
     // Get chain data and build visualization
     try {
-      const mergeRequests = await fetchMRChainData(projectInfo.gitlabUrl, projectInfo.projectId);
+      const mergeRequests = await fetchMRChainData(projectInfo.gitlabUrl, projectInfo.projectPath);
       mrChainData = mergeRequests;
       displayMRChain(mergeRequests);
     } catch (err) {
@@ -145,7 +144,6 @@ function addChainButton() {
     }
   });
 
-  buttonContainer.appendChild(projectIdInput);
   buttonContainer.appendChild(button);
   tabList.appendChild(buttonContainer);
 }
@@ -162,7 +160,13 @@ function createModal() {
   modal.innerHTML = `
     <div class="mr-chain-modal-content">
       <div class="mr-chain-modal-header">
-        <h3>Merge Request Chain</h3>
+        <div class="mr-chain-header-left">
+          <h3>Merge Request Chain</h3>
+          <label class="gl-form-checkbox custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="include-main-branch" checked>
+            <span class="custom-control-label">Include main branch</span>
+          </label>
+        </div>
         <div class="mr-chain-actions">
           <button class="gl-button btn btn-default btn-md mr-chain-export-svg">
             <span class="gl-button-text">Export SVG</span>
@@ -221,20 +225,16 @@ async function fetchProjectInfo(gitlabUrl, projectId) {
   }
 }
 
-// Fetch all data needed to build the MR chain
-async function fetchMRChainData(gitlabUrl, projectId) {
+// Modified fetchMRChainData to use project path instead of ID
+async function fetchMRChainData(gitlabUrl, projectPath) {
   try {
-    // First get project info to get default branch
-    const projectInfo = await fetchProjectInfo(gitlabUrl, projectId);
-    const defaultBranch = projectInfo.default_branch;
-
     let mergeRequests;
     if (isDevelopment) {
       const { mockMergeRequests } = await import('./mockData.js');
       mergeRequests = mockMergeRequests;
     } else {
-      // Then fetch merge requests
-      const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests?state=opened`;
+      // Use project path in API URL
+      const apiUrl = `${gitlabUrl}/api/v4/projects/${projectPath}/merge_requests?state=opened`;
       const response = await fetch(apiUrl);
       
       if (!response.ok) {
@@ -271,7 +271,13 @@ function displayMRChain(mergeRequests) {
   // Add header back
   container.innerHTML = `
     <div class="mr-chain-modal-header">
-      <h3>Merge Request Chain</h3>
+      <div class="mr-chain-header-left">
+        <h3>Merge Request Chain</h3>
+        <label class="gl-form-checkbox custom-control custom-checkbox">
+          <input type="checkbox" class="custom-control-input" id="include-main-branch" checked>
+          <span class="custom-control-label">Include main branch</span>
+        </label>
+      </div>
       <div class="mr-chain-actions">
         <button class="gl-button btn btn-default btn-md mr-chain-export-svg">
           <span class="gl-button-text">Export SVG</span>
@@ -291,6 +297,17 @@ function displayMRChain(mergeRequests) {
     modal.style.display = 'none';
   });
 
+  // Re-attach the checkbox change handler
+  const checkbox = container.querySelector('#include-main-branch');
+  if (checkbox) {
+    checkbox.addEventListener('change', () => {
+      const containerEl = document.getElementById('mr-chain-content');
+      if (containerEl && containerEl.querySelector('#mrChainDiagram')) {
+        renderMRChain(containerEl.querySelector('#mrChainDiagram'), mergeRequests);
+      }
+    });
+  }
+
   const contentContainer = container.querySelector('#mr-chain-content');
   
   if (!mergeRequests || mergeRequests.length === 0) {
@@ -305,63 +322,6 @@ function displayMRChain(mergeRequests) {
 
   // Render the chain diagram
   renderMRChain(diagramContainer, mergeRequests);
-}
-
-// Fetch data for a specific merge request
-async function fetchMergeRequestData(gitlabUrl, projectId, mrId) {
-  try {
-    // Use GitLab's API to get MR data
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrId}`;
-    
-    // For this prototype, we'll use the fetch API directly
-    // In a real extension, you might need to handle authentication
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching MR data:', error);
-    return null;
-  }
-}
-
-// Fetch merge requests by target branch
-async function fetchMergeRequestsByTargetBranch(gitlabUrl, projectId, targetBranch) {
-  try {
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests?target_branch=${encodeURIComponent(targetBranch)}&state=opened`;
-    
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching MRs by target branch:', error);
-    return [];
-  }
-}
-
-// Fetch merge requests by source branch
-async function fetchMergeRequestsBySourceBranch(gitlabUrl, projectId, sourceBranch) {
-  try {
-    const apiUrl = `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests?source_branch=${encodeURIComponent(sourceBranch)}&state=opened`;
-    
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching MRs by source branch:', error);
-    return [];
-  }
 }
 
 // Render the chain visualization
@@ -552,14 +512,37 @@ const styles = `
   .mr-chain-modal-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 20px;
+  }
+
+  .mr-chain-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mr-chain-header-left h3 {
+    margin: 0;
   }
 
   .mr-chain-actions {
     display: flex;
     gap: 8px;
     align-items: center;
+  }
+
+  .gl-form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--gray-700);
+    margin: 0;
+  }
+
+  .gl-form-checkbox input {
+    margin: 0;
   }
 
   .mr-chain-export-svg,
