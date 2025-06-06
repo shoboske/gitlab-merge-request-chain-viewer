@@ -83,31 +83,7 @@ function addChainButton() {
   if (!tabList) return;
 
   const buttonContainer = document.createElement('li');
-  buttonContainer.className = 'nav-item';
-  buttonContainer.style.marginLeft = '8px';
-  buttonContainer.style.display = 'flex';
-  buttonContainer.style.alignItems = 'center';
-  buttonContainer.style.gap = '8px';
-
-  // Add project ID input
-  const projectIdInput = document.createElement('input');
-  projectIdInput.type = 'number';
-  projectIdInput.className = 'form-control gl-form-input';
-  projectIdInput.placeholder = 'Project ID';
-  projectIdInput.style.width = '100px';
-  projectIdInput.title = 'Enter your GitLab project ID';
-
-  // Try to load saved project ID
-  const pathParts = window.location.pathname.split('/');
-  const mrIndex = pathParts.indexOf('merge_requests');
-  if (mrIndex !== -1) {
-    const projectPath = pathParts.slice(1, mrIndex).join('/');
-    getProjectIdFromStorage(projectPath).then(savedId => {
-      if (savedId) {
-        projectIdInput.value = savedId;
-      }
-    });
-  }
+  buttonContainer.className = 'nav-item gl-display-flex gl-align-items-center gl-gap-3 gl-ml-3';
 
   const button = document.createElement('button');
   button.className = 'gl-button btn btn-default btn-md';
@@ -489,55 +465,62 @@ const styles = `
   .mr-chain-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-index-modal, 1000);
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.4);
+    background-color: var(--modal-backdrop-color, rgba(31, 31, 31, 0.5));
   }
 
   .mr-chain-modal-content {
-    background-color: #fefefe;
-    margin: 5% auto;
-    padding: 20px;
-    border: 1px solid #888;
+    background-color: var(--modal-body-bg, var(--white));
+    color: var(--gl-text-color, var(--gray-900));
+    margin: var(--gl-spacing-7, 20px) auto;
+    padding: var(--gl-spacing-6, 16px);
+    border: 1px solid var(--gl-border-color-default, #dbdbdb);
     width: 80%;
     max-width: 1200px;
-    border-radius: 8px;
+    border-radius: var(--gl-border-radius-large, 8px);
     max-height: 90vh;
     overflow-y: auto;
+    box-shadow: var(--gl-shadow-modal, 0 4px 16px rgba(31, 31, 31, 0.25));
   }
 
   .mr-chain-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 20px;
+    margin-bottom: var(--gl-spacing-6, 16px);
+    padding-bottom: var(--gl-spacing-6, 16px);
+    border-bottom: 1px solid var(--gl-border-color-default, #dbdbdb);
   }
 
   .mr-chain-header-left {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--gl-spacing-3, 8px);
   }
 
   .mr-chain-header-left h3 {
     margin: 0;
+    font-size: var(--gl-font-size-lg, 16px);
+    font-weight: var(--gl-font-weight-bold, 600);
+    color: var(--gl-text-color, var(--gray-900));
   }
 
   .mr-chain-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--gl-spacing-3, 8px);
     align-items: center;
   }
 
   .gl-form-checkbox {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--gray-700);
+    gap: var(--gl-spacing-3, 8px);
+    font-size: var(--gl-font-size-sm, 12px);
+    color: var(--gl-text-color, var(--gray-900));
     margin: 0;
   }
 
@@ -547,49 +530,62 @@ const styles = `
 
   .mr-chain-export-svg,
   .mr-chain-copy-png {
-    padding: 4px 8px;
-    font-size: 14px;
+    padding: var(--gl-spacing-2, 4px) var(--gl-spacing-3, 8px);
+    font-size: var(--gl-font-size-sm, 12px);
+    background-color: var(--gl-button-default-background, var(--white));
+    border: 1px solid var(--gl-button-default-border, var(--gray-200));
+    color: var(--gl-button-default-color, var(--gray-900));
+    border-radius: var(--gl-border-radius-small, 4px);
+    transition: all var(--gl-transition-duration-fast, 0.1s) ease;
+  }
+
+  .mr-chain-export-svg:hover,
+  .mr-chain-copy-png:hover {
+    background-color: var(--gl-button-default-hover-background, var(--gray-50));
+    border-color: var(--gl-button-default-hover-border, var(--gray-300));
   }
 
   .mr-chain-modal-close {
-    color: #aaa;
-    font-size: 28px;
-    font-weight: bold;
+    color: var(--gl-text-color-tertiary, var(--gray-400));
+    font-size: var(--gl-font-size-lg, 16px);
+    font-weight: var(--gl-font-weight-normal, 400);
     cursor: pointer;
     border: none;
     background: none;
+    padding: var(--gl-spacing-2, 4px);
+    transition: color var(--gl-transition-duration-fast, 0.1s) ease;
   }
 
   .mr-chain-modal-close:hover {
-    color: #000;
+    color: var(--gl-text-color, var(--gray-900));
   }
 
   .mr-chain-loading {
     text-align: center;
-    padding: 20px;
-    font-size: 16px;
-    color: #666;
+    padding: var(--gl-spacing-6, 16px);
+    font-size: var(--gl-font-size-sm, 12px);
+    color: var(--gl-text-color-secondary, var(--gray-500));
   }
 
   .mr-chain-error {
     text-align: center;
-    padding: 20px;
-    color: #cc0000;
-    font-size: 16px;
+    padding: var(--gl-spacing-6, 16px);
+    color: var(--gl-text-red, var(--red-500));
+    font-size: var(--gl-font-size-sm, 12px);
   }
 
   .mr-chain-message {
     position: fixed;
-    bottom: 20px;
+    bottom: var(--gl-spacing-6, 16px);
     left: 50%;
     transform: translateX(-50%);
-    background: #2da44e;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    z-index: 1001;
-    animation: fadeInOut 2s ease;
+    background: var(--gl-status-success, var(--green-500));
+    color: var(--white);
+    padding: var(--gl-spacing-3, 8px) var(--gl-spacing-6, 16px);
+    border-radius: var(--gl-border-radius-small, 4px);
+    box-shadow: var(--gl-shadow-small, 0 2px 4px rgba(31, 31, 31, 0.15));
+    z-index: var(--z-index-modal-plus-one, 1001);
+    animation: fadeInOut var(--gl-transition-duration-slow, 2s) ease;
   }
 
   @keyframes fadeInOut {
@@ -600,54 +596,62 @@ const styles = `
   }
 
   .mr-chain-container {
-    padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    padding: var(--gl-spacing-6, 16px);
+    font-family: var(--gl-font-family-base);
+    color: var(--gl-text-color, var(--gray-900));
   }
 
   .mermaid {
     text-align: center;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: var(--gl-bg-white, var(--white));
+    padding: var(--gl-spacing-6, 16px);
+    border-radius: var(--gl-border-radius-default, 4px);
+    border: 1px solid var(--gl-border-color-default, #dbdbdb);
+    box-shadow: var(--gl-shadow-small, 0 2px 4px rgba(31, 31, 31, 0.15));
   }
   
   .mr-item {
-    background: #fff;
-    border: 1px solid #e1e4e8;
-    border-radius: 6px;
-    padding: 10px 15px;
-    margin: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: var(--gl-bg-white, var(--white));
+    border: 1px solid var(--gl-border-color-default, #dbdbdb);
+    border-radius: var(--gl-border-radius-default, 4px);
+    padding: var(--gl-spacing-4, 10px) var(--gl-spacing-5, 15px);
+    margin: var(--gl-spacing-2, 5px);
+    box-shadow: var(--gl-shadow-small, 0 1px 3px rgba(31, 31, 31, 0.1));
+    transition: background-color var(--gl-transition-duration-fast, 0.1s) ease;
   }
   
   .mr-item a {
-    color: #0366d6;
+    color: var(--gl-link-color, #1f75cb);
     text-decoration: none;
+    transition: color var(--gl-transition-duration-fast, 0.1s) ease;
   }
   
   .mr-item a:hover {
+    color: var(--gl-link-hover-color, #1068bf);
     text-decoration: underline;
   }
   
   .mr-arrow {
-    margin: 0 10px;
-    color: #586069;
-    font-size: 20px;
+    margin: 0 var(--gl-spacing-4, 10px);
+    color: var(--gl-text-color-tertiary, var(--gray-400));
+    font-size: var(--gl-font-size-base, 14px);
   }
   
   .chain-separator {
-    border-top: 1px solid #e1e4e8;
-    margin: 15px 0;
+    border-top: 1px solid var(--gl-border-color-default, #dbdbdb);
+    margin: var(--gl-spacing-5, 15px) 0;
   }
 
   .mermaid .node {
     cursor: context-menu;
-    transition: opacity 0.3s ease;
+    transition: all var(--gl-transition-duration-fast, 0.1s) ease;
+    fill: var(--gl-bg-white, var(--white));
+    stroke: var(--gl-border-color-default, #dbdbdb);
   }
 
   .mermaid .edge {
-    transition: opacity 0.3s ease;
+    transition: all var(--gl-transition-duration-fast, 0.1s) ease;
+    stroke: var(--gl-border-color-default, #dbdbdb);
   }
 `;
 

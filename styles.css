@@ -9,74 +9,78 @@
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--black-transparent-200, rgba(0, 0, 0, 0.5));
+  background-color: var(--modal-backdrop-color, rgba(0, 0, 0, 0.5));
   overflow-y: hidden;
 }
 
 .mr-chain-modal-content {
-  background-color: var(--gray-10, var(--white));
-  color: var(--gray-950, var(--black));
+  background-color: var(--modal-background-color, var(--white));
+  color: var(--gl-text-color, var(--gray-900));
   margin: 40px auto;
   padding: 0;
   width: 90%;
   max-width: 800px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--gl-border-radius-large, 8px);
+  box-shadow: var(--gl-modal-box-shadow, 0 4px 12px rgba(0, 0, 0, 0.15));
+  border: 1px solid var(--gl-border-color-default, #e5e5e5);
 }
 
 .mr-chain-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #e5e5e5;
+  padding: var(--gl-spacing-6, 16px) var(--gl-spacing-8, 24px);
+  border-bottom: 1px solid var(--gl-border-color-default, #e5e5e5);
+  background-color: var(--modal-header-bg, var(--white));
 }
 
 .mr-chain-modal-header h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--gl-text-color-default);
+  font-size: var(--gl-font-size-lg, 18px);
+  font-weight: var(--gl-font-weight-bold, 600);
+  color: var(--gl-text-color, var(--gray-900));
 }
 
 .mr-chain-modal-close {
   background: none;
   border: none;
-  font-size: 24px;
-  color: var(--gl-text-color-secondary);
+  font-size: var(--gl-font-size-xl, 24px);
+  color: var(--gl-text-color-secondary, var(--gray-500));
   cursor: pointer;
   padding: 0;
   line-height: 1;
+  transition: color var(--gl-transition-duration-fast, 0.1s) ease;
 }
 
 .mr-chain-modal-close:hover {
-  color: var(--gl-link-color);
+  color: var(--gl-text-color, var(--gray-900));
 }
 
 .mr-chain-modal-body {
-  padding: 24px;
+  padding: var(--gl-spacing-8, 24px);
   max-height: calc(100vh - 200px);
   overflow-y: auto;
+  background-color: var(--modal-body-bg, var(--white));
 }
 
 /* Chain visualization styles */
 .mr-chain-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--gl-spacing-8, 24px);
 }
 
 .mr-chain-loading,
 .mr-chain-error,
 .mr-chain-empty {
-  padding: 16px;
-  color: var(--gl-text-color-secondary);
-  font-size: 14px;
+  padding: var(--gl-spacing-6, 16px);
+  color: var(--gl-text-color-secondary, var(--gray-500));
+  font-size: var(--gl-font-size-sm, 14px);
   text-align: center;
 }
 
 .mr-chain-error {
-  color: var(--gl-text-red-500);
+  color: var(--gl-text-red, var(--red-500));
 }
 
 .mr-chain-list {
@@ -86,24 +90,25 @@
 }
 
 .mr-chain-item {
-  padding: 4px 0;
+  padding: var(--gl-spacing-2, 4px) 0;
   position: relative;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--gl-transition-duration-fast, 0.1s) ease;
 }
 
 .mr-chain-item:hover {
-  background-color: #f9f9f9;
+  background-color: var(--gl-hover-bg, var(--gray-50));
 }
 
 .mr-chain-item-content {
   display: flex;
   align-items: flex-start;
-  padding: 12px;
-  border-radius: var(--gl-border-radius-base);
+  padding: var(--gl-spacing-4, 12px);
+  border-radius: var(--gl-border-radius-default, 4px);
   position: relative;
-  border: 1px solid var(--gl-border-color);
-  margin: 4px 0;
+  border: 1px solid var(--gl-border-color-default, #e5e5e5);
+  margin: var(--gl-spacing-2, 4px) 0;
+  background-color: var(--gl-bg-white, var(--white));
 }
 
 /* The vertical line connecting MRs */
@@ -111,19 +116,19 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 24px;
+  left: var(--gl-spacing-8, 24px);
   width: 2px;
-  background-color: #e5e5e5;
+  background-color: var(--gl-border-color-default, #e5e5e5);
   z-index: 0;
 }
 
 .mr-chain-parents .mr-chain-connector {
   top: 50%;
-  bottom: -8px;
+  bottom: calc(-1 * var(--gl-spacing-3, 8px));
 }
 
 .mr-chain-children .mr-chain-connector {
-  top: -8px;
+  top: calc(-1 * var(--gl-spacing-3, 8px));
   bottom: 50%;
 }
 
@@ -131,56 +136,58 @@
 .mr-chain-item::before {
   content: '';
   position: absolute;
-  left: 20px;
+  left: var(--gl-spacing-7, 20px);
   top: 50%;
   transform: translateY(-50%);
-  width: 10px;
-  height: 10px;
+  width: var(--gl-spacing-4, 10px);
+  height: var(--gl-spacing-4, 10px);
   border-radius: 50%;
-  background-color: #1f75cb;
+  background-color: var(--gl-primary, #1f75cb);
   z-index: 1;
+  transition: background-color var(--gl-transition-duration-fast, 0.1s) ease;
 }
 
 /* Status colors for the MR nodes */
 .mr-status-opened::before {
-  background-color: var(--blue-500);
+  background-color: var(--gl-status-in-progress, var(--blue-500));
 }
 
 .mr-status-merged::before {
-  background-color: var(--green-500);
+  background-color: var(--gl-status-success, var(--green-500));
 }
 
 .mr-status-closed::before {
-  background-color: var(--red-500);
+  background-color: var(--gl-status-danger, var(--red-500));
 }
 
 .mr-chain-info {
-  margin-left: 32px;
+  margin-left: var(--gl-spacing-10, 32px);
   flex: 1;
 }
 
 .mr-chain-title {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: var(--gl-font-size-sm, 14px);
+  font-weight: var(--gl-font-weight-medium, 500);
+  margin-bottom: var(--gl-spacing-2, 4px);
 }
 
 .mr-chain-title a {
-  color: var(--gray-950, var(--black));
+  color: var(--gl-text-color, var(--gray-900));
   text-decoration: none;
+  transition: color var(--gl-transition-duration-fast, 0.1s) ease;
 }
 
 .mr-chain-title a:hover {
-  color: var(--blue-600);
+  color: var(--gl-link-hover-color, var(--blue-600));
   text-decoration: underline;
 }
 
 .mr-chain-details {
-  font-size: 12px;
-  color: var(--gray-500);
+  font-size: var(--gl-font-size-xs, 12px);
+  color: var(--gl-text-color-secondary, var(--gray-500));
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--gl-spacing-3, 8px);
 }
 
 .mr-chain-branch {
@@ -188,42 +195,73 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--mono-font, 'JetBrains Mono', monospace);
-  background-color: var(--gray-50);
-  padding: 2px 6px;
-  border-radius: 3px;
+  font-family: var(--gl-mono-font, 'JetBrains Mono', monospace);
+  background-color: var(--gl-bg-secondary, var(--gray-50));
+  padding: var(--gl-spacing-1, 2px) var(--gl-spacing-3, 6px);
+  border-radius: var(--gl-border-radius-small, 3px);
+  color: var(--gl-text-color-secondary, var(--gray-700));
 }
 
 .mr-chain-arrow {
-  color: #999;
-  font-size: 12px;
+  color: var(--gl-text-color-tertiary, var(--gray-400));
+  font-size: var(--gl-font-size-xs, 12px);
 }
 
 /* Current MR highlight */
 .mr-chain-item.current .mr-chain-item-content {
-  background-color: var(--blue-50);
-  border: 1px solid var(--blue-500);
+  background-color: var(--gl-bg-focus, var(--blue-50));
+  border: 1px solid var(--gl-border-focus, var(--blue-500));
 }
 
 .mr-chain-item.current::before {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--white);
-  box-shadow: 0 0 0 2px var(--blue-500);
+  width: var(--gl-spacing-4-5, 12px);
+  height: var(--gl-spacing-4-5, 12px);
+  border: 2px solid var(--gl-bg-white, var(--white));
+  box-shadow: 0 0 0 2px var(--gl-border-focus, var(--blue-500));
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .mr-chain-modal-content {
     width: 95%;
-    margin: 20px auto;
+    margin: var(--gl-spacing-7, 20px) auto;
   }
   
   .mr-chain-modal-body {
-    padding: 16px;
+    padding: var(--gl-spacing-6, 16px);
   }
   
   .mr-chain-branch {
     max-width: 120px;
+  }
+}
+
+/* Button styling */
+.gl-button {
+  background-color: var(--gl-button-default-background, var(--white));
+  border: 1px solid var(--gl-button-default-border, var(--gray-200));
+  color: var(--gl-button-default-color, var(--gray-900));
+  font-size: var(--gl-font-size-sm, 14px);
+  font-weight: var(--gl-font-weight-bold, 600);
+  padding: var(--gl-spacing-3, 8px) var(--gl-spacing-5, 16px);
+  border-radius: var(--gl-border-radius-default, 4px);
+  transition: all var(--gl-transition-duration-fast, 0.1s) ease;
+}
+
+.gl-button:hover {
+  background-color: var(--gl-button-default-hover-background, var(--gray-50));
+  border-color: var(--gl-button-default-hover-border, var(--gray-300));
+  color: var(--gl-button-default-hover-color, var(--gray-900));
+}
+
+.gl-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--gl-focus-ring, var(--blue-200));
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  .mr-chain-modal-body {
+    background-color: var(--gl-color-blue-200, var(--gray-900));
   }
 }
