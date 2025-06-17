@@ -1,7 +1,7 @@
 {
   "name": "gitlab-mr-chain-visualizer",
+  "version": "0.1.0",
   "private": true,
-  "version": "1.0.0",
   "description": "Visualize merge request chains on GitLab",
   "scripts": {
     "build": "mkdir -p dist && cp manifest.json content.js mermaid.min.js mermaid-utils.js background.js styles.css dist/ && mkdir -p dist/assets && cp assets/* dist/assets/",
