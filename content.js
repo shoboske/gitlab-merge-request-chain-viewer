@@ -139,7 +139,7 @@ function createModal() {
         <div class="mr-chain-header-left">
           <h3>Merge Request Chain</h3>
           <label class="gl-form-checkbox custom-control custom-checkbox">
-            <input type="checkbox" class="custom-control-input" id="include-main-branch" checked>
+            <input type="checkbox" class="custom-control-input" id="include-main-branch">
             <span class="custom-control-label">Include main branch</span>
           </label>
         </div>
@@ -160,6 +160,14 @@ function createModal() {
   `;
   
   document.body.appendChild(modal);
+  
+  // Load saved preference for include-main-branch
+  chrome.storage.sync.get(['includeMainBranch'], (result) => {
+    const checkbox = modal.querySelector('#include-main-branch');
+    if (checkbox) {
+      checkbox.checked = result.includeMainBranch !== false; // Default to true if not set
+    }
+  });
   
   // Close button handler
   const closeBtn = modal.querySelector('.mr-chain-modal-close');
