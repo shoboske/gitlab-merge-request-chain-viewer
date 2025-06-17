@@ -9,12 +9,10 @@ A Chrome extension that visualizes merge request chains on GitLab. This extensio
 - Shows child MRs (MRs that are based on the current MR)
 - Provides quick navigation between related merge requests
 - Color-coded nodes to indicate MR status (open, merged, closed)
+- Saves user preferences for including/excluding main branch
+- Export chain visualization as SVG or PNG
 
 ## Installation
-
-### From Chrome Web Store
-
-*Coming soon*
 
 ### Manual Installation
 
@@ -27,9 +25,37 @@ A Chrome extension that visualizes merge request chains on GitLab. This extensio
 ## Usage
 
 1. Navigate to any GitLab merge request page
-2. The extension will automatically detect and display the merge request chain
-3. The chain visualization will appear in the sidebar
-4. Click on any MR in the chain to navigate to that merge request
+2. Look for the "View Chain" button in the top navigation bar
+3. Click the button to open the MR chain visualization modal
+4. The visualization will show:
+   - Parent MRs (what your current MR is based on)
+   - The current MR
+   - Child MRs (MRs that are based on your current MR)
+5. Use the "Include main branch" checkbox to toggle visibility of main branch nodes
+6. Click on any MR in the chain to navigate to that merge request
+7. Use the "Export SVG" or "Copy PNG" buttons to save the visualization
+
+### Features in Detail
+
+#### Chain Visualization
+- Each merge request is represented as a node in the chain
+- Arrows show the direction of dependencies
+- Color coding indicates MR status:
+  - Blue: Open MRs
+  - Green: Merged MRs
+  - Red: Closed MRs
+
+#### Navigation
+- Click any MR node to navigate to that merge request
+- The current MR is highlighted in the visualization
+
+#### Export Options
+- Export SVG: Downloads the chain visualization as an SVG file
+- Copy PNG: Copies the visualization to clipboard as a PNG image
+
+#### Preferences
+- The "Include main branch" preference is saved and persists across sessions
+- Your preference will sync across devices if you're signed into Chrome
 
 ## Development
 
@@ -37,6 +63,7 @@ A Chrome extension that visualizes merge request chains on GitLab. This extensio
 
 - `manifest.json`: Extension configuration
 - `content.js`: Main script that runs on GitLab pages
+- `mermaid-utils.js`: Utilities for generating and rendering the chain visualization
 - `styles.css`: Styling for the visualization
 - `assets/`: Directory containing icons
 
