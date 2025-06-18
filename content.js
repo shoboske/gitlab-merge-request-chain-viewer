@@ -77,19 +77,19 @@ function init() {
   }
 }
 
-// Add the chain button next to tab filters
+// Add the chain button to navigation
 function addChainButton() {
-  const tabList = document.querySelector('.issues-state-filters');
-  if (!tabList) return;
+  const navControls = document.querySelector('.nav-controls');
+  if (!navControls) return;
 
-  const buttonContainer = document.createElement('li');
-  buttonContainer.className = 'nav-item gl-display-flex gl-align-items-center gl-gap-3 gl-ml-3';
+  const buttonContainer = document.createElement('div');
+  buttonContainer.className = 'gl-display-flex gl-align-items-center gl-gap-3 gl-mr-3';
 
   const button = document.createElement('button');
-  button.className = 'gl-button btn btn-default btn-md';
+  button.className = 'gl-button btn btn-md btn-default gl-display-flex';
   button.innerHTML = `
     <span class="gl-button-text">
-      View Chain
+      View chain
     </span>
   `;
   
@@ -121,7 +121,9 @@ function addChainButton() {
   });
 
   buttonContainer.appendChild(button);
-  tabList.appendChild(buttonContainer);
+  
+  // Insert at the beginning of nav-controls
+  navControls.insertBefore(buttonContainer, navControls.firstChild);
 }
 
 // Create the modal
