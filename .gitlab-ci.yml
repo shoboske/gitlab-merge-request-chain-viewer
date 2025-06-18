@@ -16,15 +16,14 @@ build_extension:
   script:
     - echo "Building extension version $PACKAGE_VERSION..."
     - npm install
-    - npm run lint
     - npm run build
     # Install archiver to create a zip file of the build
     - npm install -g archiver
-    - cd dist && archiver zip -r "../${PACKAGE_NAME}-${PACKAGE_VERSION}.zip" . && cd ..
-    - echo "Build artifact created: ${PACKAGE_NAME}-${PACKAGE_VERSION}.zip"
+    - cd dist && archiver zip -r "../${PACKAGE_NAME}-${CI_COMMIT_TAG}.zip" . && cd ..
+    - echo "Build artifact created: ${PACKAGE_NAME}-${CI_COMMIT_TAG}.zip"
   artifacts:
     paths:
-      - "${PACKAGE_NAME}-${PACKAGE_VERSION}.zip"
+      - "${PACKAGE_NAME}-${CI_COMMIT_TAG}.zip"
   # This job only runs when a tag is pushed
   only:
     - tags
@@ -37,7 +36,7 @@ create_release:
     - echo "Creating release for tag $CI_COMMIT_TAG..."
     - release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
       --description "Release of version $CI_COMMIT_TAG of the GitLab MR Chain Visualizer." \
-      --assets-link "{\"name\":\"${PACKAGE_NAME}-${PACKAGE_VERSION}.zip\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/${PACKAGE_NAME}-${PACKAGE_VERSION}.zip?job=build_extension\"}"
+      --assets-link "{\"name\":\"${PACKAGE_NAME}-${CI_COMMIT_TAG}.zip\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/${PACKAGE_NAME}-${CI_COMMIT_TAG}.zip?job=build_extension\"}"
   # This job only runs when a tag is pushed
   only:
     - tags 

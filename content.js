@@ -260,7 +260,7 @@ function displayMRChain(mergeRequests) {
       <div class="mr-chain-header-left">
         <h3>Merge Request Chain</h3>
         <label class="gl-form-checkbox custom-control custom-checkbox">
-          <input type="checkbox" class="custom-control-input" id="include-main-branch" checked>
+          <input type="checkbox" class="custom-control-input" id="include-main-branch">
           <span class="custom-control-label">Include main branch</span>
         </label>
       </div>
@@ -283,31 +283,47 @@ function displayMRChain(mergeRequests) {
     modal.style.display = 'none';
   });
 
-  // Re-attach the checkbox change handler
   const checkbox = container.querySelector('#include-main-branch');
+  const contentContainer = container.querySelector('#mr-chain-content');
+
   if (checkbox) {
+    // Re-attach the checkbox change handler
     checkbox.addEventListener('change', () => {
-      const containerEl = document.getElementById('mr-chain-content');
-      if (containerEl && containerEl.querySelector('#mrChainDiagram')) {
-        renderMRChain(containerEl.querySelector('#mrChainDiagram'), mergeRequests);
+      // Save the preference
+      chrome.storage.sync.set({ includeMainBranch: checkbox.checked });
+      const diagramContainer = contentContainer.querySelector('#mrChainDiagram');
+      if (diagramContainer) {
+        // Re-render the diagram with the new setting
+        renderMRChain(diagramContainer, mergeRequests);
       }
     });
+
+    // Load the saved preference and then render the diagram for the first time
+    chrome.storage.sync.get(['includeMainBranch'], (result) => {
+      checkbox.checked = result.includeMainBranch !== false; // Default to true
+
+      if (!mergeRequests || mergeRequests.length === 0) {
+        contentContainer.innerHTML = '<p>No merge requests found in the chain.</p>';
+        return;
+      }
+
+      // Create a container for the Mermaid diagram and render
+      const diagramContainer = document.createElement('div');
+      diagramContainer.id = 'mrChainDiagram';
+      contentContainer.appendChild(diagramContainer);
+      renderMRChain(diagramContainer, mergeRequests);
+    });
+  } else {
+    // Fallback if the checkbox doesn't exist for some reason
+    if (!mergeRequests || mergeRequests.length === 0) {
+      contentContainer.innerHTML = '<p>No merge requests found in the chain.</p>';
+      return;
+    }
+    const diagramContainer = document.createElement('div');
+    diagramContainer.id = 'mrChainDiagram';
+    contentContainer.appendChild(diagramContainer);
+    renderMRChain(diagramContainer, mergeRequests);
   }
-
-  const contentContainer = container.querySelector('#mr-chain-content');
-  
-  if (!mergeRequests || mergeRequests.length === 0) {
-    contentContainer.innerHTML = '<p>No merge requests found in the chain.</p>';
-    return;
-  }
-
-  // Create a container for the Mermaid diagram
-  const diagramContainer = document.createElement('div');
-  diagramContainer.id = 'mrChainDiagram';
-  contentContainer.appendChild(diagramContainer);
-
-  // Render the chain diagram
-  renderMRChain(diagramContainer, mergeRequests);
 }
 
 // Render the chain visualization

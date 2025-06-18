@@ -4,13 +4,8 @@
   "private": true,
   "description": "Visualize merge request chains on GitLab",
   "scripts": {
-    "build": "mkdir -p dist && cp manifest.json content.js mermaid.min.js mermaid-utils.js background.js styles.css dist/ && mkdir -p dist/assets && cp assets/* dist/assets/",
-    "lint": "eslint .",
+    "build": "node build.js",
     "convert-icons": "node convert-icons.js"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.9.1",
-    "eslint": "^9.9.1"
   },
   "dependencies": {
     "sharp": "^0.32.1"

@@ -19,7 +19,9 @@
         "mermaid-utils.js",
         "content.js"
       ],
-      "css": ["styles.css"]
+      "css": [
+        "styles.css"
+      ]
     }
   ],
   "action": {
