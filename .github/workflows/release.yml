@@ -1,0 +1,48 @@
+# GitHub Actions CI/CD for Browser Extension
+
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v0.1, v1.0.0, etc.
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Use a Node.js version compatible with dependencies
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Build the extension
+        run: npm run build
+
+      - name: Package the extension
+        run: |
+          cd dist
+          zip -r ../gitlab-mr-chain-visualizer-${{ github.ref_name }}.zip .
+          cd ..
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Release ${{ github.ref_name }}"
+          body: "Release of version ${{ github.ref_name }} of the GitLab MR Chain Visualizer."
+          tag_name: ${{ github.ref_name }}
+          files: "gitlab-mr-chain-visualizer-${{ github.ref_name }}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

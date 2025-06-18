@@ -267,6 +267,9 @@ function addCheckboxHandler(container, mergeRequests) {
   const checkbox = document.getElementById('include-main-branch');
   if (checkbox) {
     checkbox.addEventListener('change', () => {
+      // Save the preference
+      chrome.storage.sync.set({ includeMainBranch: checkbox.checked });
+      // Update the diagram
       renderMRChain(container, mergeRequests);
     });
   }
