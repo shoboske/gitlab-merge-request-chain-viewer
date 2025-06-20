@@ -36,9 +36,6 @@ jobs:
           zip -r ../gitlab-mr-chain-visualizer-${{ github.ref_name }}.zip .
           cd ..
 
-      - name: Install GitHub CLI
-        uses: cli/cli-action@v2
-
       - name: Create GitHub Release using gh CLI
         run: |
           gh release create "${{ github.ref_name }}" \
