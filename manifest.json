@@ -28,7 +28,7 @@
     "default_title": "GitLab MR Chain Visualizer"
   },
   "permissions": [
-    "storage",
+    "storage"
   ],
   "host_permissions": [
     "https://*.gitlab.com/*",
