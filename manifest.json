@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GitLab MR Chain Visualizer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Visualize merge request chains on GitLab",
   "icons": {
     "16": "assets/icon16.png",
@@ -29,7 +29,6 @@
   },
   "permissions": [
     "storage",
-    "activeTab"
   ],
   "host_permissions": [
     "https://*.gitlab.com/*",
