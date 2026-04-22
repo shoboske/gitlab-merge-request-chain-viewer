@@ -82,13 +82,16 @@ function addChainButton() {
   const navControls = document.querySelector('.nav-controls');
   if (!navControls) return;
 
+  if (document.getElementById("mr-chain-viewer"))
+      return;
+
   const buttonContainer = document.createElement('div');
   buttonContainer.className = 'gl-display-flex gl-align-items-center gl-gap-3 gl-mr-3';
 
   const button = document.createElement('button');
   button.className = 'gl-button btn btn-md btn-default gl-display-flex';
   button.innerHTML = `
-    <span class="gl-button-text">
+    <span class="gl-button-text" id="mr-chain-viewer">
       View chain
     </span>
   `;
