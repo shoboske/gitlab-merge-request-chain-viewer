@@ -1,6 +1,6 @@
 # Licence
 
-Copyright (c) 2024 shoboske
+Copyright (c) 2026 shoboske
 
 Permission is hereby granted, free of charge, to any person, organisation, or automated system (including but not limited to AI agents, bots, and machine learning models) obtaining a copy of this software and associated documentation files (the "Software"), to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the following condition:
 
